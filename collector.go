@@ -20,7 +20,7 @@ func (app *application) marocAnnonesCollect() {
   })
 
   c.OnHTML("article.listing > a:nth-child(1)", func(e *colly.HTMLElement) {
-    app.collectPage(c, e, e.Attr("href"))
+    collectPage(c, e, e.Attr("href"), app.data)
   })
 
 
@@ -30,7 +30,7 @@ func (app *application) marocAnnonesCollect() {
 
 }
 
-func (app *application) collectPage(c *colly.Collector, e *colly.HTMLElement, url string) {
+func collectPage(c *colly.Collector, e *colly.HTMLElement, url string, buffer *map[string]map[string]interface{}) {
 
   e.Request.Visit(url)
 
@@ -38,53 +38,52 @@ func (app *application) collectPage(c *colly.Collector, e *colly.HTMLElement, ur
   c.OnHTML("#content > div.used-cars > div.description.desccatemploi > h1", func(e *colly.HTMLElement) {
     title := strings.ReplaceAll(strings.ReplaceAll(e.Text, "\n", ""), "  ", "")
     e.Request.Ctx.Put("title", title)
-    (*app.data)[title] = map[string]interface{}{"title": title}
+    (*buffer)[title] = map[string]interface{}{"title": title}
     // adding the url field
-    (*app.data)[e.Request.Ctx.Get("title")]["URL"] = url
+    (*buffer)[e.Request.Ctx.Get("title")]["URL"] = url
   })
 
 
   // matching Annonceur
   c.OnHTML(".infoannonce > dl:nth-child(1) > dd:nth-child(2)", func(e *colly.HTMLElement) {
     // adding annonceur feild to data
-    (*app.data)[e.Request.Ctx.Get("title")]["Annonceur"] = e.Text
+    (*buffer)[e.Request.Ctx.Get("title")]["Annonceur"] = e.Text
   })
 
   // matching Domaine
   c.OnHTML("#extraQuestionName > li:nth-child(1) > a:nth-child(1)", func(e *colly.HTMLElement) {
     // adding annonceur feild to data
-    (*app.data)[e.Request.Ctx.Get("title")]["Domaine"] = e.Text
+    (*buffer)[e.Request.Ctx.Get("title")]["Domaine"] = e.Text
   })
 
   // matching Fonction
   c.OnHTML("#extraQuestionName > li:nth-child(2) > a:nth-child(1)", func(e *colly.HTMLElement) {
     // adding annonceur feild to data
-    (*app.data)[e.Request.Ctx.Get("title")]["Fonction"] = e.Text
+    (*buffer)[e.Request.Ctx.Get("title")]["Fonction"] = e.Text
   })
 
   // matching Entreprise
   c.OnHTML("#extraQuestionName > li:nth-child(4) > a:nth-child(1)", func(e *colly.HTMLElement) {
     // adding annonceur feild to data
-    (*app.data)[e.Request.Ctx.Get("title")]["Entreprise"] = e.Text
+    (*buffer)[e.Request.Ctx.Get("title")]["Entreprise"] = e.Text
   })
 
   // matching Contrat
   c.OnHTML("#extraQuestionName > li:nth-child(3) > a:nth-child(1)", func(e *colly.HTMLElement) {
     // adding annonceur feild to data
-    (*app.data)[e.Request.Ctx.Get("title")]["Contrat"] = e.Text
+    (*buffer)[e.Request.Ctx.Get("title")]["Contrat"] = e.Text
   })
 
   // matching Niveau d'études
   c.OnHTML("#extraQuestionName > li:nth-child(6) > a:nth-child(1)", func(e *colly.HTMLElement) {
     // adding annonceur feild to data
-    (*app.data)[e.Request.Ctx.Get("title")]["Niveau d'études"] = e.Text
+    (*buffer)[e.Request.Ctx.Get("title")]["Niveau d'études"] = e.Text
   })
 
   // matching Salaire
   c.OnHTML("#extraQuestionName > li:nth-child(5) > a:nth-child(1)", func(e *colly.HTMLElement) {
     // adding annonceur feild to data
-    (*app.data)[e.Request.Ctx.Get("title")]["Salaire"] = e.Text
+    (*buffer)[e.Request.Ctx.Get("title")]["Salaire"] = e.Text
   })
-
 }
 
