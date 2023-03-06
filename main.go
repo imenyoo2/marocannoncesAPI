@@ -36,7 +36,7 @@ func main() {
     ReadTimeout: 5 * time.Second,
     WriteTimeout: 10 * time.Second,
   }
-  fmt.Printf("starting server %s", *addr)
+  fmt.Printf("starting server %s\n", *addr)
   err := srv.ListenAndServe()
   check(err)
 }
