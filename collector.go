@@ -1,11 +1,12 @@
 package main
 
 import (
-  "fmt"
-  "log"
-  "strings"
+	"fmt"
+	"log"
+	"strings"
+	"time"
+
 	"github.com/gocolly/colly"
-  "time"
 )
 
 func (app *application) marocAnnonesCollect() {
@@ -20,13 +21,13 @@ func (app *application) marocAnnonesCollect() {
   })
 
   c.OnHTML("article.listing > a:nth-child(1)", func(e *colly.HTMLElement) {
-    collectPage(c, e, e.Attr("href"), app.data)
+    collectPage(collectPageParams{c: c, e: e, url: e.Attr("href"), dataStore: app.data})
   })
 
   // matching daily posts
-  c.OnHTML(".cars-list > li > a:nth-child(1)", func(e *colly.HTMLElement) {
-    fmt.Println("daily posts matched")
-    collectPage(c, e, e.Attr("href"), app.data)
+  c.OnHTML(".cars-list > li", func(e *colly.HTMLElement) {
+    time := e.ChildText("div:nth-child(2) > em:nth-child(1) > span:nth-child(1)") + " " + e.ChildText("div:nth-child(2) > em:nth-child(1) > span:nth-child(3)")
+    collectPage(collectPageParams{c: c, e: e, url: e.ChildAttr("a:nth-child(1)", "href"), dataStore: app.data, time: time})
   })
 
   c.SetRequestTimeout(1 * time.Minute)
@@ -35,59 +36,71 @@ func (app *application) marocAnnonesCollect() {
 
 }
 
-func collectPage(c *colly.Collector, e *colly.HTMLElement, url string, dataStore *map[string]map[string]interface{}) {
+type collectPageParams struct {
+  c *colly.Collector
+  e *colly.HTMLElement
+  url string
+  dataStore *map[string]map[string]interface{}
+  time string
+}
+func collectPage(params collectPageParams) {
 
-  e.Request.Visit(url)
+  params.e.Request.Visit(params.url)
 
   // matching the title
-  c.OnHTML("#content > div.used-cars > div.description.desccatemploi > h1", func(e *colly.HTMLElement) {
+  params.c.OnHTML("#content > div.used-cars > div.description.desccatemploi > h1", func(e *colly.HTMLElement) {
     title := strings.ReplaceAll(strings.ReplaceAll(e.Text, "\n", ""), "  ", "")
     e.Request.Ctx.Put("title", title)
-    (*dataStore)[title] = map[string]interface{}{"title": title}
+    (*params.dataStore)[title] = map[string]interface{}{"title": title}
     // adding the url field
-    (*dataStore)[e.Request.Ctx.Get("title")]["URL"] = url
+    (*params.dataStore)[e.Request.Ctx.Get("title")]["URL"] = params.url
+
+    // adding time if exist
+    if params.time != "" {
+      (*params.dataStore)[e.Request.Ctx.Get("title")]["time"] = params.time
+    }
   })
 
 
   // matching Annonceur
-  c.OnHTML(".infoannonce > dl:nth-child(1) > dd:nth-child(2)", func(e *colly.HTMLElement) {
+  params.c.OnHTML(".infoannonce > dl:nth-child(1) > dd:nth-child(2)", func(e *colly.HTMLElement) {
     // adding annonceur feild to data
-    (*dataStore)[e.Request.Ctx.Get("title")]["Annonceur"] = e.Text
+    (*params.dataStore)[e.Request.Ctx.Get("title")]["Annonceur"] = e.Text
   })
 
   // matching Domaine
-  c.OnHTML("#extraQuestionName > li:nth-child(1) > a:nth-child(1)", func(e *colly.HTMLElement) {
+  params.c.OnHTML("#extraQuestionName > li:nth-child(1) > a:nth-child(1)", func(e *colly.HTMLElement) {
     // adding annonceur feild to data
-    (*dataStore)[e.Request.Ctx.Get("title")]["Domaine"] = e.Text
+    (*params.dataStore)[e.Request.Ctx.Get("title")]["Domaine"] = e.Text
   })
 
   // matching Fonction
-  c.OnHTML("#extraQuestionName > li:nth-child(2) > a:nth-child(1)", func(e *colly.HTMLElement) {
+  params.c.OnHTML("#extraQuestionName > li:nth-child(2) > a:nth-child(1)", func(e *colly.HTMLElement) {
     // adding annonceur feild to data
-    (*dataStore)[e.Request.Ctx.Get("title")]["Fonction"] = e.Text
+    (*params.dataStore)[e.Request.Ctx.Get("title")]["Fonction"] = e.Text
   })
 
   // matching Entreprise
-  c.OnHTML("#extraQuestionName > li:nth-child(4) > a:nth-child(1)", func(e *colly.HTMLElement) {
+  params.c.OnHTML("#extraQuestionName > li:nth-child(4) > a:nth-child(1)", func(e *colly.HTMLElement) {
     // adding annonceur feild to data
-    (*dataStore)[e.Request.Ctx.Get("title")]["Entreprise"] = e.Text
+    (*params.dataStore)[e.Request.Ctx.Get("title")]["Entreprise"] = e.Text
   })
 
   // matching Contrat
-  c.OnHTML("#extraQuestionName > li:nth-child(3) > a:nth-child(1)", func(e *colly.HTMLElement) {
+  params.c.OnHTML("#extraQuestionName > li:nth-child(3) > a:nth-child(1)", func(e *colly.HTMLElement) {
     // adding annonceur feild to data
-    (*dataStore)[e.Request.Ctx.Get("title")]["Contrat"] = e.Text
+    (*params.dataStore)[e.Request.Ctx.Get("title")]["Contrat"] = e.Text
   })
 
   // matching Niveau d'études
-  c.OnHTML("#extraQuestionName > li:nth-child(6) > a:nth-child(1)", func(e *colly.HTMLElement) {
+  params.c.OnHTML("#extraQuestionName > li:nth-child(6) > a:nth-child(1)", func(e *colly.HTMLElement) {
     // adding annonceur feild to data
-    (*dataStore)[e.Request.Ctx.Get("title")]["Niveau d'études"] = e.Text
+    (*params.dataStore)[e.Request.Ctx.Get("title")]["Niveau d'études"] = e.Text
   })
 
   // matching Salaire
-  c.OnHTML("#extraQuestionName > li:nth-child(5) > a:nth-child(1)", func(e *colly.HTMLElement) {
+  params.c.OnHTML("#extraQuestionName > li:nth-child(5) > a:nth-child(1)", func(e *colly.HTMLElement) {
     // adding annonceur feild to data
-    (*dataStore)[e.Request.Ctx.Get("title")]["Salaire"] = e.Text
+    (*params.dataStore)[e.Request.Ctx.Get("title")]["Salaire"] = e.Text
   })
 }
