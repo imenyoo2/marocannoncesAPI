@@ -36,10 +36,15 @@ func (app *application) marocAnnonesCollect() {
     }
   })
 
+  pageDepth := 3
+
   // uncomment to scrape the whole website
-//  c.OnHTML(".pagina_suivant > a:nth-child(1)", func(e *colly.HTMLElement) {
-//    e.Request.Visit(e.Attr("href"))
-//  })
+  c.OnHTML(".pagina_suivant > a:nth-child(1)", func(e *colly.HTMLElement) {
+    if pageDepth > 0 {
+      pageDepth = pageDepth - 1
+      e.Request.Visit(e.Attr("href"))
+    }
+  })
 
   c.SetRequestTimeout(1 * time.Minute)
 
@@ -92,18 +97,6 @@ func extractIdAndCatigorie(url string) (int, int, error) {
   var cat []byte
   for i := base1; i < len(url); i++ {
     if url[i] >= byte('0') && url[i] <= byte('9') {
-      id = append(id, url[i])
-    } else if url[i] == '/' {
-      break;
-    } else {
-      fmt.Printf("error in the url: %s\n", url)
-      return 0, 0, fmt.Errorf("expected / found: %d", url[i])
-    }
-  }
-  base2 := base1 + len(id) + 23
-
-  for i := base2; i < len(url); i++ {
-    if url[i] >= '0' && url[i] <= '9' {
       cat = append(cat, url[i])
     } else if url[i] == '/' {
       break;
@@ -112,15 +105,28 @@ func extractIdAndCatigorie(url string) (int, int, error) {
       return 0, 0, fmt.Errorf("expected / found: %d", url[i])
     }
   }
+  base2 := base1 + len(cat) + 23
 
-  return toInt(id), toInt(cat), nil
+  for i := base2; i < len(url); i++ {
+    if url[i] >= '0' && url[i] <= '9' {
+      id = append(id, url[i])
+    } else if url[i] == '/' {
+      break;
+    } else {
+      fmt.Printf("error in the url: %s\n", url)
+      return 0, 0, fmt.Errorf("expected / found: %d", url[i])
+    }
+  }
+
+  return toInt(cat),toInt(id), nil
 }
 
+// TODO: get rid of the .onhtml handlers (on every call the onhtml handlers redefined)
 func collectPage(params collectPageParams) DBvalues{
 
   result := DBvalues{}
   var err error
-  result.id, result.catigorie, err = extractIdAndCatigorie(params.url)
+  result.catigorie, result.id, err = extractIdAndCatigorie(params.url)
   check(err)
   result.url = params.url
 
@@ -140,7 +146,6 @@ func collectPage(params collectPageParams) DBvalues{
       // TODO add time field to DBvalues
     }
   })
-
 
   // matching Annonceur
   params.c.OnHTML(".infoannonce > dl:nth-child(1) > dd:nth-child(2)", func(e *colly.HTMLElement) {
