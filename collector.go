@@ -26,9 +26,20 @@ func (app *application) marocAnnonesCollect() {
 
   // matching daily posts
   c.OnHTML(".cars-list > li", func(e *colly.HTMLElement) {
-    time := e.ChildText("div:nth-child(2) > em:nth-child(1) > span:nth-child(1)") + " " + e.ChildText("div:nth-child(2) > em:nth-child(1) > span:nth-child(3)")
-    collectPage(collectPageParams{c: c, e: e, url: e.ChildAttr("a:nth-child(1)", "href"), dataStore: app.data, time: time})
+    url := e.ChildAttr("a:nth-child(1)", "href")
+    if url != "" {
+      time := (e.ChildText("div:nth-child(2) > em:nth-child(1) > span:nth-child(1)") + 
+                          " " + 
+                          e.ChildText("div:nth-child(2) > em:nth-child(1) > span:nth-child(3)"))
+      result := collectPage(collectPageParams{c: c, e: e, url: url , dataStore: app.data, time: time})
+      app.Insert(result)
+    }
   })
+
+  // uncomment to scrape the whole website
+//  c.OnHTML(".pagina_suivant > a:nth-child(1)", func(e *colly.HTMLElement) {
+//    e.Request.Visit(e.Attr("href"))
+//  })
 
   c.SetRequestTimeout(1 * time.Minute)
 
@@ -43,21 +54,90 @@ type collectPageParams struct {
   dataStore *map[string]map[string]interface{}
   time string
 }
-func collectPage(params collectPageParams) {
 
-  params.e.Request.Visit(params.url)
+type DBvalues struct {
+  id          int
+  catigorie   int
+  url         string
+  title       string
+  Annonceur   string
+  Contrat     string
+  Domaine     string
+  Entreprise  string
+  Fonction    string
+  Niveau      string
+  Salaire     string
+}
+
+func toInt(arr []byte) int {
+  multiplier := 1
+  result := 0
+  for i := 0; i < len(arr); i++ {
+    multiplier *= 10
+  }
+  for _, v := range arr {
+    multiplier /= 10
+    result += (int(v) - 48) * multiplier
+  }
+  return result
+}
+
+
+func extractIdAndCatigorie(url string) (int, int, error) {
+  base1 := 10
+  if base1 > len(url) {
+    return 0, 0, fmt.Errorf("expected a valid url found: %s", url)
+  }
+  var id []byte
+  var cat []byte
+  for i := base1; i < len(url); i++ {
+    if url[i] >= byte('0') && url[i] <= byte('9') {
+      id = append(id, url[i])
+    } else if url[i] == '/' {
+      break;
+    } else {
+      fmt.Printf("error in the url: %s\n", url)
+      return 0, 0, fmt.Errorf("expected / found: %d", url[i])
+    }
+  }
+  base2 := base1 + len(id) + 23
+
+  for i := base2; i < len(url); i++ {
+    if url[i] >= '0' && url[i] <= '9' {
+      cat = append(cat, url[i])
+    } else if url[i] == '/' {
+      break;
+    } else {
+      fmt.Printf("error in the url: %s\n", url)
+      return 0, 0, fmt.Errorf("expected / found: %d", url[i])
+    }
+  }
+
+  return toInt(id), toInt(cat), nil
+}
+
+func collectPage(params collectPageParams) DBvalues{
+
+  result := DBvalues{}
+  var err error
+  result.id, result.catigorie, err = extractIdAndCatigorie(params.url)
+  check(err)
+  result.url = params.url
+
 
   // matching the title
   params.c.OnHTML("#content > div.used-cars > div.description.desccatemploi > h1", func(e *colly.HTMLElement) {
     title := strings.ReplaceAll(strings.ReplaceAll(e.Text, "\n", ""), "  ", "")
     e.Request.Ctx.Put("title", title)
     (*params.dataStore)[title] = map[string]interface{}{"title": title}
+    result.title = title
     // adding the url field
     (*params.dataStore)[e.Request.Ctx.Get("title")]["URL"] = params.url
 
     // adding time if exist
     if params.time != "" {
       (*params.dataStore)[e.Request.Ctx.Get("title")]["time"] = params.time
+      // TODO add time field to DBvalues
     }
   })
 
@@ -66,41 +146,72 @@ func collectPage(params collectPageParams) {
   params.c.OnHTML(".infoannonce > dl:nth-child(1) > dd:nth-child(2)", func(e *colly.HTMLElement) {
     // adding annonceur feild to data
     (*params.dataStore)[e.Request.Ctx.Get("title")]["Annonceur"] = e.Text
+    result.Annonceur = e.Text
   })
 
   // matching Domaine
   params.c.OnHTML("#extraQuestionName > li:nth-child(1) > a:nth-child(1)", func(e *colly.HTMLElement) {
     // adding annonceur feild to data
     (*params.dataStore)[e.Request.Ctx.Get("title")]["Domaine"] = e.Text
+    result.Domaine = e.Text
   })
 
   // matching Fonction
   params.c.OnHTML("#extraQuestionName > li:nth-child(2) > a:nth-child(1)", func(e *colly.HTMLElement) {
     // adding annonceur feild to data
     (*params.dataStore)[e.Request.Ctx.Get("title")]["Fonction"] = e.Text
+    result.Fonction = e.Text
   })
 
   // matching Entreprise
   params.c.OnHTML("#extraQuestionName > li:nth-child(4) > a:nth-child(1)", func(e *colly.HTMLElement) {
     // adding annonceur feild to data
     (*params.dataStore)[e.Request.Ctx.Get("title")]["Entreprise"] = e.Text
+    result.Entreprise = e.Text
   })
 
   // matching Contrat
   params.c.OnHTML("#extraQuestionName > li:nth-child(3) > a:nth-child(1)", func(e *colly.HTMLElement) {
     // adding annonceur feild to data
     (*params.dataStore)[e.Request.Ctx.Get("title")]["Contrat"] = e.Text
+    result.Contrat = e.Text
   })
 
   // matching Niveau d'études
   params.c.OnHTML("#extraQuestionName > li:nth-child(6) > a:nth-child(1)", func(e *colly.HTMLElement) {
     // adding annonceur feild to data
     (*params.dataStore)[e.Request.Ctx.Get("title")]["Niveau d'études"] = e.Text
+    result.Niveau = e.Text
   })
 
   // matching Salaire
   params.c.OnHTML("#extraQuestionName > li:nth-child(5) > a:nth-child(1)", func(e *colly.HTMLElement) {
     // adding annonceur feild to data
     (*params.dataStore)[e.Request.Ctx.Get("title")]["Salaire"] = e.Text
+    result.Salaire = e.Text
   })
+
+  // start scraping the page
+  params.e.Request.Visit(params.url)
+
+  return result
 }
+
+func (app *application) Insert(values DBvalues) {
+  stmt := `INSERT INTO posts (id, catigorie, url, title, Annonceur, Contrat, Domaine, Entreprise, Fonction, Niveau, Salaire) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  _, err := app.DB.Exec(stmt, 
+                        values.id, 
+                        values.catigorie, 
+                        values.url, 
+                        values.title, 
+                        values.Annonceur, 
+                        values.Contrat, 
+                        values.Domaine,
+                        values.Entreprise,
+                        values.Fonction,
+                        values.Niveau,
+                        values.Salaire,
+                      )
+  check(err)
+}
+
