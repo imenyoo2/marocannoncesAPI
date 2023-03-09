@@ -36,7 +36,7 @@ func (app *application) marocAnnonesCollect() {
     }
   })
 
-  pageDepth := 3
+  pageDepth := 0
 
   // uncomment to scrape the whole website
   c.OnHTML(".pagina_suivant > a:nth-child(1)", func(e *colly.HTMLElement) {

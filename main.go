@@ -36,6 +36,7 @@ type application struct {
 func main() {
   addr := flag.String("addr", ":4000", "HTTP network address")
   dnst := flag.String("dnst", "posts:1234@/marocannonces?parseTime=true", "MySQL data source name")
+  startHTTP := flag.Bool("nohttp", false, "to stop the http server from running")
   flag.Parse()
   data := map[string]map[string]interface{}{}
 
@@ -56,6 +57,8 @@ func main() {
     WriteTimeout: 10 * time.Second,
   }
   fmt.Printf("starting server %s\n", *addr)
-  err = srv.ListenAndServe()
+  if !*startHTTP {
+    err = srv.ListenAndServe()
+  }
   check(err)
 }
