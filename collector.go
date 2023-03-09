@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"time"
+  "time"
 
 	"github.com/gocolly/colly"
 )
@@ -20,8 +20,12 @@ func (app *application) marocAnnonesCollect() {
     log.Println("Something went wrong:", err)
   })
 
+  // matching premium posts
   c.OnHTML("article.listing > a:nth-child(1)", func(e *colly.HTMLElement) {
-    collectPage(collectPageParams{c: c, e: e, url: e.Attr("href"), dataStore: app.data})
+    result := collectPage(collectPageParams{c: c, e: e, url: e.Attr("href"), dataStore: app.data})
+    result.premium = 1
+    result.time = "00:00:00"
+    app.Insert(result)
   })
 
   // matching daily posts
@@ -32,6 +36,11 @@ func (app *application) marocAnnonesCollect() {
                           " " + 
                           e.ChildText("div:nth-child(2) > em:nth-child(1) > span:nth-child(3)"))
       result := collectPage(collectPageParams{c: c, e: e, url: url , dataStore: app.data, time: time})
+      result.premium = 0
+      var err error
+      result.time, err = getTime(time)
+      check(err)
+
       app.Insert(result)
     }
   })
@@ -72,6 +81,8 @@ type DBvalues struct {
   Fonction    string
   Niveau      string
   Salaire     string
+  premium     int
+  time        string
 }
 
 func toInt(arr []byte) int {
@@ -119,6 +130,16 @@ func extractIdAndCatigorie(url string) (int, int, error) {
   }
 
   return toInt(cat),toInt(id), nil
+}
+
+func getTime(t string) (string, error) {
+  parts :=  strings.Split(t, " ")
+  if parts[0] == "Aujourd'hui" {
+    return parts[1] + ":00", nil
+  } else {
+    return "", fmt.Errorf("want Aujourd'hui, got %s\n", parts[0])
+  }
+
 }
 
 // TODO: get rid of the .onhtml handlers (on every call the onhtml handlers redefined)
@@ -203,7 +224,7 @@ func collectPage(params collectPageParams) DBvalues{
 }
 
 func (app *application) Insert(values DBvalues) {
-  stmt := `INSERT INTO posts (id, catigorie, url, title, Annonceur, Contrat, Domaine, Entreprise, Fonction, Niveau, Salaire) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  stmt := `INSERT INTO posts (id, catigorie, url, title, Annonceur, Contrat, Domaine, Entreprise, Fonction, Niveau, Salaire, premium, date, time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)`
   _, err := app.DB.Exec(stmt, 
                         values.id, 
                         values.catigorie, 
@@ -216,6 +237,8 @@ func (app *application) Insert(values DBvalues) {
                         values.Fonction,
                         values.Niveau,
                         values.Salaire,
+                        values.premium,
+                        values.time,
                       )
   check(err)
 }

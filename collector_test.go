@@ -1,7 +1,9 @@
 package main
 
 import (
-  "testing"
+	"fmt"
+	"testing"
+  "time"
 )
 
 func TestExtractIdAndCatigorie(t *testing.T) {
@@ -65,3 +67,4 @@ func TestToInt(t *testing.T) {
     })
   }
 }
+
