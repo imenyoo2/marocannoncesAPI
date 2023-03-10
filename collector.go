@@ -25,6 +25,7 @@ func (app *application) marocAnnonesCollect() {
     result := collectPage(collectPageParams{c: c, e: e, url: e.Attr("href"), dataStore: app.data})
     result.premium = 1
     result.time = "00:00:00"
+    result.date = "2001-10-10"
     app.Insert(result)
   })
 
@@ -38,7 +39,7 @@ func (app *application) marocAnnonesCollect() {
       result := collectPage(collectPageParams{c: c, e: e, url: url , dataStore: app.data, time: time})
       result.premium = 0
       var err error
-      result.time, err = getTime(time)
+      result.date, result.time, err = getTime(time)
       check(err)
 
       app.Insert(result)
@@ -82,6 +83,7 @@ type DBvalues struct {
   Niveau      string
   Salaire     string
   premium     int
+  date        string
   time        string
 }
 
@@ -132,12 +134,16 @@ func extractIdAndCatigorie(url string) (int, int, error) {
   return toInt(cat),toInt(id), nil
 }
 
-func getTime(t string) (string, error) {
+func getTime(t string) (string, string, error) {
   parts :=  strings.Split(t, " ")
   if parts[0] == "Aujourd'hui" {
-    return parts[1] + ":00", nil
+    y, m, d := time.Now().Date()
+    return strings.Join([]string{string(y), string(m), string(d)}, "-"),parts[1] + ":00", nil
+  } else if parts[0] == "Hier" {
+    y, m, d := time.Now().Date()
+    return strings.Join([]string{string(y), string(m), string(d - 1)}, "-"),parts[1] + ":00", nil
   } else {
-    return "", fmt.Errorf("want Aujourd'hui, got %s\n", parts[0])
+    return "", "", fmt.Errorf("want Aujourd'hui, got %s\n", parts[0])
   }
 
 }
@@ -224,7 +230,7 @@ func collectPage(params collectPageParams) DBvalues{
 }
 
 func (app *application) Insert(values DBvalues) {
-  stmt := `INSERT INTO posts (id, catigorie, url, title, Annonceur, Contrat, Domaine, Entreprise, Fonction, Niveau, Salaire, premium, date, time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)`
+  stmt := `INSERT INTO posts (id, catigorie, url, title, Annonceur, Contrat, Domaine, Entreprise, Fonction, Niveau, Salaire, premium, date, time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   _, err := app.DB.Exec(stmt, 
                         values.id, 
                         values.catigorie, 
@@ -238,6 +244,7 @@ func (app *application) Insert(values DBvalues) {
                         values.Niveau,
                         values.Salaire,
                         values.premium,
+                        values.date,
                         values.time,
                       )
   check(err)
