@@ -14,9 +14,6 @@ import (
 
 func (app *application) marocAnnonesCollect() {
 
-  // keep track of the collelcted pages to not surpass the depth
-  pageDepth := app.depth
-
   c := colly.NewCollector()
   // setting callback functions
   c.OnRequest(func(r *colly.Request) {
@@ -46,17 +43,21 @@ func (app *application) marocAnnonesCollect() {
       result.premium = 0
       var err error
       result.date, result.time, err = getTime(time)
-      check(err)
-
-      app.Insert(result)
+      if err != nil {
+        app.Insert(result)
+      } else {
+        // setting stop collect, this is true when 
+        app.stopCollect = true
+      }
     }
   })
 
 
   // uncomment to scrape the whole website
   c.OnHTML(".pagina_suivant > a:nth-child(1)", func(e *colly.HTMLElement) {
-    if pageDepth > 1 || app.stopCollect {
-      pageDepth = pageDepth - 1
+    if app.depth > 1 && !app.stopCollect {
+      app.depth -= 1
+      fmt.Printf("app.stopCollect = %t", app.stopCollect)
       e.Request.Visit(e.Attr("href"))
     }
   })
