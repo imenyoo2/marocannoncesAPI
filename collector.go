@@ -5,6 +5,7 @@ import (
 	"log"
 	"strings"
   "time"
+  "strconv"
 
 	"github.com/gocolly/colly"
 )
@@ -138,10 +139,10 @@ func getTime(t string) (string, string, error) {
   parts :=  strings.Split(t, " ")
   if parts[0] == "Aujourd'hui" {
     y, m, d := time.Now().Date()
-    return strings.Join([]string{string(y), string(m), string(d)}, "-"),parts[1] + ":00", nil
+    return strings.Join([]string{strconv.Itoa(y), strconv.Itoa(int(m)), strconv.Itoa(d)}, "-"),parts[1] + ":00", nil
   } else if parts[0] == "Hier" {
     y, m, d := time.Now().Date()
-    return strings.Join([]string{string(y), string(m), string(d - 1)}, "-"),parts[1] + ":00", nil
+    return strings.Join([]string{strconv.Itoa(y), strconv.Itoa(int(m)), strconv.Itoa(d - 1)}, "-"),parts[1] + ":00", nil
   } else {
     return "", "", fmt.Errorf("want Aujourd'hui, got %s\n", parts[0])
   }
