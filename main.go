@@ -29,9 +29,10 @@ func openDB(dnst string) (*sql.DB, error) {
 }
 
 type application struct {
-  data      *map[string]map[string]interface{}
-  DB        *sql.DB
-  depth     int
+  data        *map[string]map[string]interface{}
+  DB          *sql.DB
+  depth       int
+  stopCollect bool
 }
 
 func main() {
@@ -46,9 +47,10 @@ func main() {
   check(err)
 
   app := &application {
-    data: &data,
-    DB: db,
-    depth: *depth,
+    data:        &data,
+    DB:          db,
+    depth:       *depth,
+    stopCollect: false,
   }
   app.marocAnnonesCollect()
 

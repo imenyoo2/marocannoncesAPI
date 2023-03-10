@@ -1,13 +1,15 @@
 package main
 
 import (
-	"fmt"
-	"log"
-	"strings"
-  "time"
-  "strconv"
+ 	"fmt"
+ 	"log"
+ 	"strconv"
+ 	"strings"
+ 	"time"
+  "errors"
 
-	"github.com/gocolly/colly"
+ 	"github.com/gocolly/colly"
+  mysql "github.com/go-sql-driver/mysql"
 )
 
 func (app *application) marocAnnonesCollect() {
@@ -53,7 +55,7 @@ func (app *application) marocAnnonesCollect() {
 
   // uncomment to scrape the whole website
   c.OnHTML(".pagina_suivant > a:nth-child(1)", func(e *colly.HTMLElement) {
-    if pageDepth > 1 {
+    if pageDepth > 1 || app.stopCollect {
       pageDepth = pageDepth - 1
       e.Request.Visit(e.Attr("href"))
     }
@@ -250,6 +252,14 @@ func (app *application) Insert(values DBvalues) {
                         values.date,
                         values.time,
                       )
-  check(err)
+
+  var mySQLError *mysql.MySQLError
+  // finding a sqlError in err, and set it to mySQLError
+  if errors.As(err, &mySQLError) {
+    if mySQLError.Number == 1062 && strings.Contains(mySQLError.Message, "posts_uc_id") {
+      app.stopCollect = true
+    }
+  } else {check(err)}
 }
+
 
