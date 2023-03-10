@@ -31,12 +31,14 @@ func openDB(dnst string) (*sql.DB, error) {
 type application struct {
   data      *map[string]map[string]interface{}
   DB        *sql.DB
+  depth     int
 }
 
 func main() {
   addr := flag.String("addr", ":4000", "HTTP network address")
   dnst := flag.String("dnst", "posts:1234@/marocannonces?parseTime=true", "MySQL data source name")
   startHTTP := flag.Bool("nohttp", false, "to stop the http server from running")
+  depth := flag.Int("depth", 1, "the number of pages the collector should collect")
   flag.Parse()
   data := map[string]map[string]interface{}{}
 
@@ -46,6 +48,7 @@ func main() {
   app := &application {
     data: &data,
     DB: db,
+    depth: *depth,
   }
   app.marocAnnonesCollect()
 
