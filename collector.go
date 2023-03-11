@@ -29,6 +29,8 @@ func (app *application) marocAnnonesCollect() {
     result.premium = 1
     result.time = "00:00:00"
     result.date = "2001-10-10"
+    place := e.ChildText("div:nth-child(3) > span:nth-child(4)")
+    result.place = place
     app.Insert(result)
   })
 
@@ -39,8 +41,10 @@ func (app *application) marocAnnonesCollect() {
       time := (e.ChildText("div:nth-child(2) > em:nth-child(1) > span:nth-child(1)") + 
                           " " + 
                           e.ChildText("div:nth-child(2) > em:nth-child(1) > span:nth-child(3)"))
+      place := e.ChildText("a:nth-child(1) > div:nth-child(2) > span:nth-child(2)")
       result := collectPage(collectPageParams{c: c, e: e, url: url , dataStore: app.data, time: time})
       result.premium = 0
+      result.place = place
       var err error
       result.date, result.time, err = getTime(time)
       if err != nil {
@@ -91,6 +95,7 @@ type DBvalues struct {
   premium     int
   date        string
   time        string
+  place       string
 }
 
 func toInt(arr []byte) int {
@@ -236,7 +241,7 @@ func collectPage(params collectPageParams) DBvalues{
 }
 
 func (app *application) Insert(values DBvalues) {
-  stmt := `INSERT INTO posts (id, catigorie, url, title, Annonceur, Contrat, Domaine, Entreprise, Fonction, Niveau, Salaire, premium, date, time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  stmt := `INSERT INTO posts (id, catigorie, url, title, Annonceur, Contrat, Domaine, Entreprise, Fonction, Niveau, Salaire, premium, date, time, place) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   _, err := app.DB.Exec(stmt, 
                         values.id, 
                         values.catigorie, 
@@ -252,6 +257,7 @@ func (app *application) Insert(values DBvalues) {
                         values.premium,
                         values.date,
                         values.time,
+                        values.place,
                       )
 
   var mySQLError *mysql.MySQLError
