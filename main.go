@@ -33,6 +33,8 @@ type application struct {
   DB          *sql.DB
   depth       int
   stopCollect bool
+  DupRecords  int 
+  NewRecords  int
 }
 
 func main() {
@@ -51,8 +53,11 @@ func main() {
     DB:          db,
     depth:       *depth,
     stopCollect: false,
+    DupRecords:  0,
+    NewRecords:  0,
   }
   app.marocAnnonesCollect()
+  app.printSumarry()
 
   srv := &http.Server{
     Addr: *addr,

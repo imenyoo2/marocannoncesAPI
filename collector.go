@@ -47,7 +47,7 @@ func (app *application) marocAnnonesCollect() {
       result.place = place
       var err error
       result.date, result.time, err = getTime(time)
-      if err != nil {
+      if err == nil {
         app.Insert(result)
       } else {
         // setting stop collect, this is true when 
@@ -261,12 +261,18 @@ func (app *application) Insert(values DBvalues) {
                       )
 
   var mySQLError *mysql.MySQLError
-  // finding a sqlError in err, and set it to mySQLError
-  if errors.As(err, &mySQLError) {
+  if err == nil {
+    app.NewRecords += 1
+  } else if errors.As(err, &mySQLError) { // finding a sqlError in err, and set it to mySQLError
     if mySQLError.Number == 1062 && strings.Contains(mySQLError.Message, "posts_uc_id") {
       app.stopCollect = true
+      app.DupRecords += 1
+    } else {
+      log.Fatal(err)
     }
-  } else {check(err)}
+  } else {
+    log.Fatal(err)
+  }
 }
 
 
