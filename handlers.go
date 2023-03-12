@@ -1,8 +1,10 @@
 package main
 
 import (
-  "net/http"
-  "encoding/json"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"strconv"
 )
 
 func writeto(w http.ResponseWriter, data []byte) {
@@ -21,8 +23,42 @@ func writeto(w http.ResponseWriter, data []byte) {
   }
 }
 
-func (app *application) home (w http.ResponseWriter, r *http.Request) {
+func (app *application) home(w http.ResponseWriter, r *http.Request) {
+  fmt.Println("test2 ----")
   app.parseJson(0, 0, "", "", "") // get all data
+  jsonStr, err := json.Marshal(*app.data)
+  check(err)
+  w.Header().Set("Content-Type", "application/json")
+  w.WriteHeader(http.StatusOK)
+  writeto(w, jsonStr)
+}
+
+func (app *application) filter(w http.ResponseWriter, r *http.Request) {
+  var err error
+  params := struct {
+    id         int
+    catigorie  int
+    salaire    string
+    contrat    string
+    domaine    string
+  }{}
+  if r.URL.Query().Get("id") != "" {
+    params.id, err = strconv.Atoi(r.URL.Query().Get("id"))
+    check(err) // TODO: send http response instead
+  }
+
+  if r.URL.Query().Get("catigorie") != "" {
+    params.catigorie, err = strconv.Atoi(r.URL.Query().Get("catigorie"))
+    check(err) // TODO: send http response instead
+  }
+
+  params.salaire = r.URL.Query().Get("salaire")
+  params.contrat = r.URL.Query().Get("contrat")
+  params.domaine = r.URL.Query().Get("domaine")
+
+  app.parseJson(params.catigorie, params.id, params.salaire, params.contrat, params.domaine)
+
+  // TODO: change this into a function
   jsonStr, err := json.Marshal(*app.data)
   check(err)
   w.Header().Set("Content-Type", "application/json")

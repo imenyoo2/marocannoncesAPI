@@ -25,6 +25,10 @@ type DBvalues struct {
 
 
 func (app *application) parseJson(catigorie int, id int, Salaire string, contrat string, Domaine string) {
+
+  // emptying data, inorder to fill it 
+  *app.data = map[string]map[string]interface{}{}
+
   conditions := []string{}
   values := []interface{}{} // TODO: change from interface{}
 
