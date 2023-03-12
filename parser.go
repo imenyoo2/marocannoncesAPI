@@ -51,7 +51,7 @@ func (app *application) parseJson(catigorie int, id int, Salaire string, contrat
 
   stmt := `SELECT id, catigorie, url, title, Annonceur, Contrat, Domaine, Entreprise, Fonction, Niveau, Salaire, premium, date, time, place FROM posts`
   // add conditions to stmt if any exist
-  if len(conditions) > 1 {
+  if len(conditions) > 0 {
     stmt +=  " WHERE " + strings.Join(conditions, " AND ")
   }
 
