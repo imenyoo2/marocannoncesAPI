@@ -3,18 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
  	"database/sql"
  	_ "github.com/go-sql-driver/mysql"
 )
 
-func check(err error) {
-  if err != nil {
-    log.Fatal(err)
-  }
-}
 
 func openDB(dnst string) (*sql.DB, error) {
   db, err := sql.Open("mysql", dnst)
@@ -42,6 +36,7 @@ func main() {
   dnst := flag.String("dnst", "posts:1234@/marocannonces?parseTime=true", "MySQL data source name")
   startHTTP := flag.Bool("nohttp", false, "to stop the http server from running")
   depth := flag.Int("depth", 1, "the number of pages the collector should collect")
+  nocollect := flag.Bool("nocollect", false, "include to use already existing data without collection")
   flag.Parse()
   data := map[string]map[string]interface{}{}
 
@@ -56,8 +51,10 @@ func main() {
     DupRecords:  0,
     NewRecords:  0,
   }
-  app.marocAnnonesCollect()
-  app.printSumarry()
+  if !*nocollect {
+    app.marocAnnonesCollect()
+    app.printSumarry()
+  }
 
   srv := &http.Server{
     Addr: *addr,

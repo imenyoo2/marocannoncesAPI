@@ -25,7 +25,7 @@ func (app *application) marocAnnonesCollect() {
 
   // matching premium posts
   c.OnHTML("article.listing > a:nth-child(1)", func(e *colly.HTMLElement) {
-    result := collectPage(collectPageParams{c: c, e: e, url: e.Attr("href"), dataStore: app.data})
+    result := collectPage(collectPageParams{c: c, e: e, url: e.Attr("href")})
     result.premium = 1
     result.time = "00:00:00"
     result.date = "2001-10-10"
@@ -42,7 +42,7 @@ func (app *application) marocAnnonesCollect() {
                           " " + 
                           e.ChildText("div:nth-child(2) > em:nth-child(1) > span:nth-child(3)"))
       place := e.ChildText("a:nth-child(1) > div:nth-child(2) > span:nth-child(2)")
-      result := collectPage(collectPageParams{c: c, e: e, url: url , dataStore: app.data, time: time})
+      result := collectPage(collectPageParams{c: c, e: e, url: url , time: time})
       result.premium = 0
       result.place = place
       var err error
@@ -76,27 +76,10 @@ type collectPageParams struct {
   c *colly.Collector
   e *colly.HTMLElement
   url string
-  dataStore *map[string]map[string]interface{}
+  //dataStore *map[string]map[string]interface{}
   time string
 }
 
-type DBvalues struct {
-  id          int
-  catigorie   int
-  url         string
-  title       string
-  Annonceur   string
-  Contrat     string
-  Domaine     string
-  Entreprise  string
-  Fonction    string
-  Niveau      string
-  Salaire     string
-  premium     int
-  date        string
-  time        string
-  place       string
-}
 
 func toInt(arr []byte) int {
   multiplier := 1
@@ -173,14 +156,12 @@ func collectPage(params collectPageParams) DBvalues{
   params.c.OnHTML("#content > div.used-cars > div.description.desccatemploi > h1", func(e *colly.HTMLElement) {
     title := strings.ReplaceAll(strings.ReplaceAll(e.Text, "\n", ""), "  ", "")
     e.Request.Ctx.Put("title", title)
-    (*params.dataStore)[title] = map[string]interface{}{"title": title}
     result.title = title
     // adding the url field
-    (*params.dataStore)[e.Request.Ctx.Get("title")]["URL"] = params.url
 
     // adding time if exist
     if params.time != "" {
-      (*params.dataStore)[e.Request.Ctx.Get("title")]["time"] = params.time
+      result.time = params.time
       // TODO add time field to DBvalues
     }
   })
@@ -188,49 +169,42 @@ func collectPage(params collectPageParams) DBvalues{
   // matching Annonceur
   params.c.OnHTML(".infoannonce > dl:nth-child(1) > dd:nth-child(2)", func(e *colly.HTMLElement) {
     // adding annonceur feild to data
-    (*params.dataStore)[e.Request.Ctx.Get("title")]["Annonceur"] = e.Text
     result.Annonceur = e.Text
   })
 
   // matching Domaine
   params.c.OnHTML("#extraQuestionName > li:nth-child(1) > a:nth-child(1)", func(e *colly.HTMLElement) {
     // adding annonceur feild to data
-    (*params.dataStore)[e.Request.Ctx.Get("title")]["Domaine"] = e.Text
     result.Domaine = e.Text
   })
 
   // matching Fonction
   params.c.OnHTML("#extraQuestionName > li:nth-child(2) > a:nth-child(1)", func(e *colly.HTMLElement) {
     // adding annonceur feild to data
-    (*params.dataStore)[e.Request.Ctx.Get("title")]["Fonction"] = e.Text
     result.Fonction = e.Text
   })
 
   // matching Entreprise
   params.c.OnHTML("#extraQuestionName > li:nth-child(4) > a:nth-child(1)", func(e *colly.HTMLElement) {
     // adding annonceur feild to data
-    (*params.dataStore)[e.Request.Ctx.Get("title")]["Entreprise"] = e.Text
     result.Entreprise = e.Text
   })
 
   // matching Contrat
   params.c.OnHTML("#extraQuestionName > li:nth-child(3) > a:nth-child(1)", func(e *colly.HTMLElement) {
     // adding annonceur feild to data
-    (*params.dataStore)[e.Request.Ctx.Get("title")]["Contrat"] = e.Text
     result.Contrat = e.Text
   })
 
   // matching Niveau d'études
   params.c.OnHTML("#extraQuestionName > li:nth-child(6) > a:nth-child(1)", func(e *colly.HTMLElement) {
     // adding annonceur feild to data
-    (*params.dataStore)[e.Request.Ctx.Get("title")]["Niveau d'études"] = e.Text
     result.Niveau = e.Text
   })
 
   // matching Salaire
   params.c.OnHTML("#extraQuestionName > li:nth-child(5) > a:nth-child(1)", func(e *colly.HTMLElement) {
     // adding annonceur feild to data
-    (*params.dataStore)[e.Request.Ctx.Get("title")]["Salaire"] = e.Text
     result.Salaire = e.Text
   })
 

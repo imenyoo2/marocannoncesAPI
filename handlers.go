@@ -22,6 +22,7 @@ func writeto(w http.ResponseWriter, data []byte) {
 }
 
 func (app *application) home (w http.ResponseWriter, r *http.Request) {
+  app.parseJson(0, 0, "", "", "") // get all data
   jsonStr, err := json.Marshal(*app.data)
   check(err)
   w.Header().Set("Content-Type", "application/json")
