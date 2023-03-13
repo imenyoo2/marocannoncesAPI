@@ -24,7 +24,7 @@ type DBvalues struct {
 }
 
 
-func (app *application) parseJson(catigorie int, id int, Salaire string, contrat string, Domaine string) {
+func (app *application) parseJson(catigorie int, id int, Salaire string, contrat string, Domaine string, Fonction string, Niveau string, place string) {
 
   // emptying data, inorder to fill it 
   *app.data = map[string]map[string]interface{}{}
@@ -51,6 +51,18 @@ func (app *application) parseJson(catigorie int, id int, Salaire string, contrat
   if Domaine != "" {
     conditions = append(conditions, "Domaine = ?")
     values = append(values, Domaine)
+  }
+  if Fonction != "" {
+    conditions = append(conditions, "Fonction = ?")
+    values = append(values, Fonction)
+  }
+  if Niveau != "" {
+    conditions = append(conditions, "Niveau = ?")
+    values = append(values, Niveau)
+  }
+  if place != "" {
+    conditions = append(conditions, "place = ?")
+    values = append(values, place)
   }
 
   stmt := `SELECT id, catigorie, url, title, Annonceur, Contrat, Domaine, Entreprise, Fonction, Niveau, Salaire, premium, date, time, place FROM posts`
