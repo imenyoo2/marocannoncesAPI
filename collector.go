@@ -26,7 +26,7 @@ func (app *application) marocAnnonesCollect() {
   // matching premium posts
   c.OnHTML("article.listing > a:nth-child(1)", func(e *colly.HTMLElement) {
     result := collectPage(collectPageParams{c: c, e: e, url: e.Attr("href")})
-    result.premium = 1
+    result.premium[0] = 1
     result.time = "00:00:00"
     result.date = "2001-10-10"
     place := e.ChildText("div:nth-child(3) > span:nth-child(4)")
@@ -43,7 +43,7 @@ func (app *application) marocAnnonesCollect() {
                           e.ChildText("div:nth-child(2) > em:nth-child(1) > span:nth-child(3)"))
       place := e.ChildText("a:nth-child(1) > div:nth-child(2) > span:nth-child(2)")
       result := collectPage(collectPageParams{c: c, e: e, url: url , time: time})
-      result.premium = 0
+      result.premium[0] = 0
       result.place = place
       var err error
       result.date, result.time, err = getTime(time)

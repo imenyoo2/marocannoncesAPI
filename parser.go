@@ -17,7 +17,7 @@ type DBvalues struct {
   Fonction    string
   Niveau      string
   Salaire     string
-  premium     int
+  premium     [ ]byte
   date        string
   time        string
   place       string
@@ -78,22 +78,23 @@ func (app *application) parseJson(catigorie int, id int, Salaire string, contrat
   row := DBvalues{}
 
   for rows.Next() {
-    rows.Scan(&row.id,
-              &row.catigorie,
-              &row.url,
-              &row.title,
-              &row.Annonceur,
-              &row.Contrat,
-              &row.Domaine,
-              &row.Entreprise,
-              &row.Fonction,
-              &row.Niveau,
-              &row.Salaire,
-              &row.premium,
-              &row.date,
-              &row.time,
-              &row.place,
-            )
+    err := rows.Scan(&row.id,
+                     &row.catigorie,
+                     &row.url,
+                     &row.title,
+                     &row.Annonceur,
+                     &row.Contrat,
+                     &row.Domaine,
+                     &row.Entreprise,
+                     &row.Fonction,
+                     &row.Niveau,
+                     &row.Salaire,
+                     &row.premium,
+                     &row.date,
+                     &row.time,
+                     &row.place)
+    check(err)
+
     fmt.Printf("parsing row id=%d\n", row.id)
     (*app.data)[row.title] = map[string]interface{}{}
     (*app.data)[row.title]["id"] =  row.id
@@ -106,7 +107,7 @@ func (app *application) parseJson(catigorie int, id int, Salaire string, contrat
     (*app.data)[row.title]["Fonction"] = row.Fonction
     (*app.data)[row.title]["Niveau"] = row.Niveau
     (*app.data)[row.title]["Salaire"] = row.Salaire
-    (*app.data)[row.title]["premium"] = row.premium
+    (*app.data)[row.title]["premium"] = row.premium[0]
     (*app.data)[row.title]["date"] = row.date
     (*app.data)[row.title]["time"] = row.time
     (*app.data)[row.title]["place"] = row.place
