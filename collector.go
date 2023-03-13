@@ -26,7 +26,7 @@ func (app *application) marocAnnonesCollect() {
   // matching premium posts
   c.OnHTML("article.listing > a:nth-child(1)", func(e *colly.HTMLElement) {
     result := collectPage(collectPageParams{c: c, e: e, url: e.Attr("href")})
-    result.premium[0] = 1
+    result.premium = []byte{1}
     result.time = "00:00:00"
     result.date = "2001-10-10"
     place := e.ChildText("div:nth-child(3) > span:nth-child(4)")
@@ -43,7 +43,7 @@ func (app *application) marocAnnonesCollect() {
                           e.ChildText("div:nth-child(2) > em:nth-child(1) > span:nth-child(3)"))
       place := e.ChildText("a:nth-child(1) > div:nth-child(2) > span:nth-child(2)")
       result := collectPage(collectPageParams{c: c, e: e, url: url , time: time})
-      result.premium[0] = 0
+      result.premium = []byte{0}
       result.place = place
       var err error
       result.date, result.time, err = getTime(time)
@@ -72,11 +72,12 @@ func (app *application) marocAnnonesCollect() {
 
 }
 
+// collectPageParams used to pass parameters to collectPage
+// time is an optional parameter
 type collectPageParams struct {
   c *colly.Collector
   e *colly.HTMLElement
   url string
-  //dataStore *map[string]map[string]interface{}
   time string
 }
 
@@ -143,72 +144,55 @@ func getTime(t string) (string, string, error) {
 }
 
 // TODO: get rid of the .onhtml handlers (on every call the onhtml handlers redefined)
+// TODO: move onhtml somewhere where it only get called once
 func collectPage(params collectPageParams) DBvalues{
 
   result := DBvalues{}
+
+  if params.time != "" {
+    result.time = params.time
+  }
+
+  // extracting id and catigorie
   var err error
   result.catigorie, result.id, err = extractIdAndCatigorie(params.url)
   check(err)
   result.url = params.url
 
+	params.c.OnHTML(".description", func(e *colly.HTMLElement) {
+		title := strings.TrimSpace(e.ChildText("h1"))
+		result.title = title
 
-  // matching the title
-  params.c.OnHTML("#content > div.used-cars > div.description.desccatemploi > h1", func(e *colly.HTMLElement) {
-    title := strings.ReplaceAll(strings.ReplaceAll(e.Text, "\n", ""), "  ", "")
-    e.Request.Ctx.Put("title", title)
-    result.title = title
-    // adding the url field
+		e.ForEach("li", func(i int, e *colly.HTMLElement) { // intresting
+			switch i { // isn't this a loop over all children that are of type li
+			case 0:
+				result.place = e.ChildText("a")
+			case 1:
+				result.time = e.Text
+			}
+		})
 
-    // adding time if exist
-    if params.time != "" {
-      result.time = params.time
-      // TODO add time field to DBvalues
-    }
-  })
-
-  // matching Annonceur
-  params.c.OnHTML(".infoannonce > dl:nth-child(1) > dd:nth-child(2)", func(e *colly.HTMLElement) {
-    // adding annonceur feild to data
-    result.Annonceur = e.Text
-  })
-
-  // matching Domaine
-  params.c.OnHTML("#extraQuestionName > li:nth-child(1) > a:nth-child(1)", func(e *colly.HTMLElement) {
-    // adding annonceur feild to data
-    result.Domaine = e.Text
-  })
-
-  // matching Fonction
-  params.c.OnHTML("#extraQuestionName > li:nth-child(2) > a:nth-child(1)", func(e *colly.HTMLElement) {
-    // adding annonceur feild to data
-    result.Fonction = e.Text
-  })
-
-  // matching Entreprise
-  params.c.OnHTML("#extraQuestionName > li:nth-child(4) > a:nth-child(1)", func(e *colly.HTMLElement) {
-    // adding annonceur feild to data
-    result.Entreprise = e.Text
-  })
-
-  // matching Contrat
-  params.c.OnHTML("#extraQuestionName > li:nth-child(3) > a:nth-child(1)", func(e *colly.HTMLElement) {
-    // adding annonceur feild to data
-    result.Contrat = e.Text
-  })
-
-  // matching Niveau d'études
-  params.c.OnHTML("#extraQuestionName > li:nth-child(6) > a:nth-child(1)", func(e *colly.HTMLElement) {
-    // adding annonceur feild to data
-    result.Niveau = e.Text
-  })
-
-  // matching Salaire
-  params.c.OnHTML("#extraQuestionName > li:nth-child(5) > a:nth-child(1)", func(e *colly.HTMLElement) {
-    // adding annonceur feild to data
-    result.Salaire = e.Text
-  })
-
-  // start scraping the page
+		e.ForEach(".extraQuestionName", func(_ int, e *colly.HTMLElement) {
+			e.ForEach("li", func(idx int, e *colly.HTMLElement) {
+        val := strings.TrimSpace(e.ChildText("a")) // TODO: use trimspace in ur code
+				switch idx {
+				case 0:
+					result.Domaine = val
+				case 1:
+					result.Fonction = val
+				case 2:
+					result.Contrat = val
+				case 3:
+					result.Entreprise = val
+				case 4:
+					result.Salaire = val
+				case 5:
+					result.Niveau = val
+				}
+			})
+		})
+		result.Annonceur = e.ChildText("dd")
+	})
   params.e.Request.Visit(params.url)
 
   return result
