@@ -25,7 +25,7 @@ func writeto(w http.ResponseWriter, data []byte) {
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
   fmt.Println("test2 ----")
-  app.parseJson(0, 0, "", "", "") // get all data
+  app.parseJson(0, 0, "", "", "", "", "", "") // get all data
   jsonStr, err := json.Marshal(*app.data)
   check(err)
   w.Header().Set("Content-Type", "application/json")
@@ -41,6 +41,9 @@ func (app *application) filter(w http.ResponseWriter, r *http.Request) {
     salaire    string
     contrat    string
     domaine    string
+    fonction   string
+    niveau     string
+    place      string
   }{}
   if r.URL.Query().Get("id") != "" {
     params.id, err = strconv.Atoi(r.URL.Query().Get("id"))
@@ -55,8 +58,11 @@ func (app *application) filter(w http.ResponseWriter, r *http.Request) {
   params.salaire = r.URL.Query().Get("salaire")
   params.contrat = r.URL.Query().Get("contrat")
   params.domaine = r.URL.Query().Get("domaine")
+  params.fonction = r.URL.Query().Get("fonction")
+  params.niveau = r.URL.Query().Get("niveau")
+  params.place = r.URL.Query().Get("place")
 
-  app.parseJson(params.catigorie, params.id, params.salaire, params.contrat, params.domaine)
+  app.parseJson(params.catigorie, params.id, params.salaire, params.contrat, params.domaine, params.fonction, params.niveau, params.place)
 
   // TODO: change this into a function
   jsonStr, err := json.Marshal(*app.data)
