@@ -57,7 +57,7 @@ func (app *application) marocAnnonesCollect() {
   })
 
 
-  // uncomment to scrape the whole website
+  // the 'Suivant' button
   c.OnHTML(".pagina_suivant > a:nth-child(1)", func(e *colly.HTMLElement) {
     if app.depth > 1 && !app.stopCollect {
       app.depth -= 1
@@ -148,11 +148,10 @@ func getTime(t string) (string, string, error) {
 func collectPage(params collectPageParams) DBvalues{
 
   result := DBvalues{}
-
+  // true for daily posts
   if params.time != "" {
     result.time = params.time
   }
-
   // extracting id and catigorie
   var err error
   result.catigorie, result.id, err = extractIdAndCatigorie(params.url)
@@ -160,8 +159,8 @@ func collectPage(params collectPageParams) DBvalues{
   result.url = params.url
 
 	params.c.OnHTML(".description", func(e *colly.HTMLElement) {
-		title := strings.TrimSpace(e.ChildText("h1"))
-		result.title = title
+    title := strings.TrimSpace(e.ChildText("h1"))
+    result.title = title
 
 		e.ForEach("li", func(i int, e *colly.HTMLElement) { // intresting
 			switch i { // isn't this a loop over all children that are of type li
