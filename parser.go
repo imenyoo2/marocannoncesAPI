@@ -21,6 +21,7 @@ type DBvalues struct {
   date        string
   time        string
   place       string
+  vue         string
 }
 
 
