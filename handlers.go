@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 )
@@ -24,7 +23,6 @@ func writeto(w http.ResponseWriter, data []byte) {
 }
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
-  fmt.Println("test2 ----")
   app.parseJson(0, 0, "", "", "", "", "", "") // get all data
   jsonStr, err := json.Marshal(*app.data)
   check(err)

@@ -99,7 +99,7 @@ func (ac *AnnouncesCollector) collectPage() {
 				}
 			})
 		})
-		ac.data.Annonceur = e.ChildText("dd")
+		ac.data.Annonceur = e.ChildText(".infoannonce > dl:nth-child(1) > dd:nth-child(2)")
 	})
 }
 
@@ -211,8 +211,6 @@ func (ac *AnnouncesCollector) collectNext(depth *int, stopCollect bool) {
 
 func (app *application) visitLinks(ac *AnnouncesCollector) {
   base := "https://www.marocannonces.com/"
-  fmt.Println(ac.checkExistRecord(app.DB, 9340361))
-  fmt.Println(ac.checkExistRecord(app.DB, 2939832))
   for _, v := range *ac.links {
     if v == "" {
       continue
@@ -225,7 +223,6 @@ func (app *application) visitLinks(ac *AnnouncesCollector) {
     ac.data.premium = []byte{0}
     fmt.Println("----- inserting values -----")
     if !ac.checkExistRecord(app.DB, id) {
-      fmt.Println("checkExistRecord = false")
       app.Insert(*ac.data)
       app.NewRecords += 1
     } else {
